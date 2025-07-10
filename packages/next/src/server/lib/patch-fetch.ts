@@ -424,7 +424,7 @@ export function createPatchedFetcher(
             cacheSignal.endRead()
             cacheSignal = null
           }
-          return makeHangingPromise<Response>(
+          return await makeHangingPromise<Response>(
             workUnitStore.renderSignal,
             'fetch()'
           )

@@ -774,7 +774,7 @@ export function cache(
         )
 
         if (dynamicAccessAbortController.signal.aborted) {
-          return makeHangingPromise(
+          return await makeHangingPromise(
             workUnitStore.renderSignal,
             dynamicAccessAbortController.signal.reason.message
           )
@@ -827,7 +827,7 @@ export function cache(
             if (cacheSignal) {
               cacheSignal.endRead()
             }
-            return makeHangingPromise(
+            return await makeHangingPromise(
               workUnitStore.renderSignal,
               'dynamic "use cache"'
             )
@@ -865,7 +865,7 @@ export function cache(
             workUnitStore?.type === 'prerender' &&
             workUnitStore.allowEmptyStaticShell
           ) {
-            return makeHangingPromise(
+            return await makeHangingPromise(
               workUnitStore.renderSignal,
               'dynamic "use cache"'
             )
@@ -949,7 +949,7 @@ export function cache(
             cacheSignal.endRead()
           }
 
-          return makeHangingPromise(
+          return await makeHangingPromise(
             workUnitStore.renderSignal,
             'dynamic "use cache"'
           )
@@ -994,7 +994,7 @@ export function cache(
           )
 
           if (result.type === 'prerender-dynamic') {
-            return result.hangingPromise
+            return await result.hangingPromise
           }
 
           const { stream: newStream, pendingCacheEntry } = result
