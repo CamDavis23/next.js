@@ -36,11 +36,13 @@ import { ERROR_CONTENT_SKELETON_STYLES } from '../container/runtime-error/error-
 import { DEVTOOLS_PANEL_TAB_ISSUES_CONTENT_LAYOUT_STYLES } from '../components/devtools-panel/devtools-panel-tab/issues-tab/issues-tab-content-layout'
 import { DEVTOOLS_PANEL_TAB_ISSUES_EMPTY_CONTENT_STYLES } from '../components/devtools-panel/devtools-panel-tab/issues-tab/issues-tab-empty-content'
 import { SHORTCUT_RECORDER_STYLES } from '../components/errors/dev-tools-indicator/dev-tools-info/shortcut-recorder'
+import { REFRESH_CLOCK_WISE_STYLES } from '../icons/refresh-clock-wise'
 
 export function ComponentStyles() {
   return (
     <style>
       {css`
+        ${REFRESH_CLOCK_WISE_STYLES}
         ${COPY_BUTTON_STYLES}
         ${CALL_STACK_FRAME_STYLES}
         ${CALL_STACK_STYLES}
