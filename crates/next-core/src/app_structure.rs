@@ -968,10 +968,7 @@ async fn directory_tree_to_loader_tree_internal(
         tree.segment = rcstr!("children");
     }
 
-    if let Some(page) = (app_path == for_app_path || app_path.is_catchall())
-        .then_some(modules.page)
-        .flatten()
-    {
+    if let Some(page) = (app_path == for_app_path).then_some(modules.page).flatten() {
         tree.parallel_routes.insert(
             rcstr!("children"),
             AppPageLoaderTree {
@@ -1038,9 +1035,16 @@ async fn directory_tree_to_loader_tree_internal(
             }
 
             if let Some(current_tree) = tree.parallel_routes.get("children") {
-                if current_tree.has_only_catchall()
-                    && (!subtree.has_only_catchall()
-                        || current_tree.get_specificity() < subtree.get_specificity())
+                // Prioritize specific routes over catch-all routes
+                // Replace current tree if:
+                // 1. Current tree is catch-all and new subtree is not, OR
+                // 2. Both are catch-all but new subtree has higher specificity
+                if current_tree.has_only_catchall() && !subtree.has_only_catchall() {
+                    tree.parallel_routes
+                        .insert(rcstr!("children"), subtree.clone());
+                } else if current_tree.has_only_catchall()
+                    && subtree.has_only_catchall()
+                    && current_tree.get_specificity() < subtree.get_specificity()
                 {
                     tree.parallel_routes
                         .insert(rcstr!("children"), subtree.clone());
