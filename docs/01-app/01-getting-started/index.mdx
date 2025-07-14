@@ -1,21 +1,149 @@
----
-title: Getting Started
-description: Learn how to create full-stack web applications with the Next.js App Router.
----
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { io } from "socket.io-client";
 
-Welcome to the Next.js documentation!
+const socket = io("http://localhost:4000", { transports: ["websocket"] });
 
-This **Getting Started** section will help you create your first Next.js app and learn the core features you'll use in every project.
+export default function SellerDashboard() {
+  const [bids, setBids] = useState([]);
+  const [currentBid, setCurrentBid] = useState('');
+  const [itemName, setItemName] = useState('');
+  const [itemImage, setItemImage] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+  const [auctionStarted, setAuctionStarted] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [timerActive, setTimerActive] = useState(false);
+  const [editableCountdown, setEditableCountdown] = useState('60');
 
-## Pre-requisite knowledge
+  useEffect(() => {
+    const handleNewBid = (bid) => {
+      setBids((prev) => [...prev, bid]);
+    };
 
-Our documentation assumes some familiarity with web development. Before getting started, it'll help if you're comfortable with:
+    socket.on("new-bid", handleNewBid);
 
-- HTML
-- CSS
-- JavaScript
-- React
+    return () => {
+      socket.off("new-bid", handleNewBid);
+    };
+  }, []);
 
-If you're new to React or need a refresher, we recommend starting with our [React Foundations course](/learn/react-foundations), and the [Next.js Foundations course](/learn/dashboard-app) that has you building an application as you learn.
+  useEffect(() => {
+    let timer;
+    if (timerActive && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setTimerActive(false);
+    }
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
 
-## Next Steps
+  const submitBid = () => {
+    const bidValue = parseFloat(currentBid);
+    if (isNaN(bidValue) || bidValue <= 0) return;
+    socket.emit("place-bid", { amount: bidValue.toFixed(2), user: "Anonymous" });
+    setCurrentBid('');
+  };
+
+  const startAuction = () => {
+    if (!itemName || !itemImage) return;
+    setAuctionStarted(true);
+    setBids([]);
+    const initialTime = parseInt(editableCountdown);
+    if (!isNaN(initialTime) && initialTime > 0) {
+      setCountdown(initialTime);
+      setTimerActive(true);
+    }
+  };
+
+  const updateTimer = () => {
+    const newTime = parseInt(editableCountdown);
+    if (!isNaN(newTime) && newTime > 0) {
+      setCountdown(newTime);
+      setTimerActive(true);
+    }
+  };
+
+  return (
+    <div className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Seller Live Auction Dashboard</h1>
+
+      {!auctionStarted ? (
+        <Card className="mb-6">
+          <CardContent className="p-4 space-y-4">
+            <h2 className="text-xl font-semibold">Create New Auction</h2>
+            <Input
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              placeholder="Item name (e.g., Vintage Gucci Jacket)"
+            />
+            <Input
+              value={itemImage}
+              onChange={(e) => setItemImage(e.target.value)}
+              placeholder="Image URL"
+            />
+            <Input
+              value={itemDescription}
+              onChange={(e) => setItemDescription(e.target.value)}
+              placeholder="Item description"
+            />
+            <Input
+              type="number"
+              value={editableCountdown}
+              onChange={(e) => setEditableCountdown(e.target.value)}
+              placeholder="Auction duration in seconds"
+              min="1"
+            />
+            <Button onClick={startAuction}>Start Auction</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card className="mb-4">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <img src={itemImage} alt={itemName} className="w-full md:w-1/2 object-cover rounded-2xl shadow-md" />
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">{itemName}</h2>
+                  <p className="text-sm mb-4">{itemDescription}</p>
+                  <p className="text-red-600 font-semibold mb-2">Time Remaining: {countdown} seconds</p>
+                  <div className="flex gap-2 mb-4 items-center">
+                    <Input
+                      type="number"
+                      value={editableCountdown}
+                      onChange={(e) => setEditableCountdown(e.target.value)}
+                      placeholder="Set new time"
+                      min="1"
+                    />
+                    <Button onClick={updateTimer}>Update Timer</Button>
+                  </div>
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      type="number"
+                      value={currentBid}
+                      onChange={(e) => setCurrentBid(e.target.value)}
+                      placeholder="Enter bid amount"
+                      min="0.01"
+                      step="0.01"
+                    />
+                    <Button onClick={submitBid} disabled={!timerActive}>Submit Bid</Button>
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Bid History</h3>
+                  <ul className="space-y-1 max-h-40 overflow-y-auto pr-2">
+                    {bids.map((bid, idx) => (
+                      <li key={idx} className="text-sm">{bid.user} bid ${Number(bid.amount).toFixed(2)}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
