@@ -213,7 +213,6 @@ function propagateCacheLifeAndTags(
     workUnitStore &&
     (workUnitStore.type === 'cache' ||
       workUnitStore.type === 'prerender' ||
-      workUnitStore.type === 'prerender-ppr' ||
       workUnitStore.type === 'prerender-legacy')
   ) {
     // Propagate tags and revalidate upwards
@@ -820,10 +819,10 @@ export function cache(
             (existingEntry.revalidate === 0 ||
               existingEntry.expire < DYNAMIC_EXPIRE)
           ) {
-            // In a Dynamic I/O prerender, if the cache entry has revalidate: 0 or if the
+            // In a Cache Components prerender, if the cache entry has revalidate: 0 or if the
             // expire time is under 5 minutes, then we consider this cache entry dynamic
             // as it's not worth generating static pages for such data. It's better to leave
-            // a PPR hole that can be filled in dynamically with a potentially cached entry.
+            // a Suspense hole that can be filled in dynamically with a potentially cached entry.
             if (cacheSignal) {
               cacheSignal.endRead()
             }
@@ -941,10 +940,10 @@ export function cache(
           entry !== undefined &&
           (entry.revalidate === 0 || entry.expire < DYNAMIC_EXPIRE)
         ) {
-          // In a Dynamic I/O prerender, if the cache entry has revalidate: 0 or if the
+          // In a Cache Components prerender, if the cache entry has revalidate: 0 or if the
           // expire time is under 5 minutes, then we consider this cache entry dynamic
           // as it's not worth generating static pages for such data. It's better to leave
-          // a PPR hole that can be filled in dynamically with a potentially cached entry.
+          // a Suspense hole that can be filled in dynamically with a potentially cached entry.
           if (cacheSignal) {
             cacheSignal.endRead()
           }

@@ -4,14 +4,12 @@ import type { FallbackRouteParams } from './fallback-params'
 import { ReflectAdapter } from '../web/spec-extension/adapters/reflect'
 import {
   throwToInterruptStaticGeneration,
-  postponeWithTracking,
   trackSynchronousRequestDataAccessInDev,
 } from '../app-render/dynamic-rendering'
 
 import {
   workUnitAsyncStorage,
   type PrerenderStore,
-  type PrerenderStorePPR,
   type PrerenderStoreLegacy,
   type PrerenderStoreModern,
 } from '../app-render/work-unit-async-storage.external'
@@ -61,18 +59,18 @@ export function createParamsFromClient(
   workStore: WorkStore
 ) {
   const workUnitStore = workUnitAsyncStorage.getStore()
-  if (workUnitStore) {
-    switch (workUnitStore.type) {
-      case 'prerender':
-      case 'prerender-client':
-      case 'prerender-ppr':
-      case 'prerender-legacy':
-        return createPrerenderParams(underlyingParams, workStore, workUnitStore)
-      default:
-      // fallthrough
-    }
+  if (!workUnitStore) {
+    return createRenderParams(underlyingParams, workStore)
   }
-  return createRenderParams(underlyingParams, workStore)
+
+  switch (workUnitStore.type) {
+    case 'prerender':
+    case 'prerender-client':
+    case 'prerender-legacy':
+      return createPrerenderParams(underlyingParams, workStore, workUnitStore)
+    default:
+      return createRenderParams(underlyingParams, workStore)
+  }
 }
 
 // generateMetadata always runs in RSC context so it is equivalent to a Server Page Component
@@ -85,18 +83,18 @@ export function createServerParamsForRoute(
   workStore: WorkStore
 ) {
   const workUnitStore = workUnitAsyncStorage.getStore()
-  if (workUnitStore) {
-    switch (workUnitStore.type) {
-      case 'prerender':
-      case 'prerender-client':
-      case 'prerender-ppr':
-      case 'prerender-legacy':
-        return createPrerenderParams(underlyingParams, workStore, workUnitStore)
-      default:
-      // fallthrough
-    }
+  if (!workUnitStore) {
+    return createRenderParams(underlyingParams, workStore)
   }
-  return createRenderParams(underlyingParams, workStore)
+
+  switch (workUnitStore.type) {
+    case 'prerender':
+    case 'prerender-client':
+    case 'prerender-legacy':
+      return createPrerenderParams(underlyingParams, workStore, workUnitStore)
+    default:
+      return createRenderParams(underlyingParams, workStore)
+  }
 }
 
 export function createServerParamsForServerSegment(
@@ -104,18 +102,18 @@ export function createServerParamsForServerSegment(
   workStore: WorkStore
 ): Promise<Params> {
   const workUnitStore = workUnitAsyncStorage.getStore()
-  if (workUnitStore) {
-    switch (workUnitStore.type) {
-      case 'prerender':
-      case 'prerender-client':
-      case 'prerender-ppr':
-      case 'prerender-legacy':
-        return createPrerenderParams(underlyingParams, workStore, workUnitStore)
-      default:
-      // fallthrough
-    }
+  if (!workUnitStore) {
+    return createRenderParams(underlyingParams, workStore)
   }
-  return createRenderParams(underlyingParams, workStore)
+
+  switch (workUnitStore.type) {
+    case 'prerender':
+    case 'prerender-client':
+    case 'prerender-legacy':
+      return createPrerenderParams(underlyingParams, workStore, workUnitStore)
+    default:
+      return createRenderParams(underlyingParams, workStore)
+  }
 }
 
 export function createPrerenderParamsForClientSegment(
@@ -261,7 +259,7 @@ function makeErroringExoticParams(
   underlyingParams: Params,
   fallbackParams: FallbackRouteParams,
   workStore: WorkStore,
-  prerenderStore: PrerenderStorePPR | PrerenderStoreLegacy
+  prerenderStore: PrerenderStoreLegacy
 ): Promise<Params> {
   const cachedParams = CachedParams.get(underlyingParams)
   if (cachedParams) {
@@ -289,23 +287,13 @@ function makeErroringExoticParams(
             // for params is only dynamic when we're generating a fallback shell
             // and even when `dynamic = "error"` we still support generating dynamic
             // fallback shells
-            // TODO remove this comment when cacheComponents is the default since there
-            // will be no `dynamic = "error"`
-            if (prerenderStore.type === 'prerender-ppr') {
-              // PPR Prerender (no cacheComponents)
-              postponeWithTracking(
-                workStore.route,
-                expression,
-                prerenderStore.dynamicTracking
-              )
-            } else {
-              // Legacy Prerender
-              throwToInterruptStaticGeneration(
-                expression,
-                workStore,
-                prerenderStore
-              )
-            }
+
+            // Legacy Prerender
+            throwToInterruptStaticGeneration(
+              expression,
+              workStore,
+              prerenderStore
+            )
           },
           enumerable: true,
         })
@@ -318,21 +306,11 @@ function makeErroringExoticParams(
             // fallback shells
             // TODO remove this comment when cacheComponents is the default since there
             // will be no `dynamic = "error"`
-            if (prerenderStore.type === 'prerender-ppr') {
-              // PPR Prerender (no cacheComponents)
-              postponeWithTracking(
-                workStore.route,
-                expression,
-                prerenderStore.dynamicTracking
-              )
-            } else {
-              // Legacy Prerender
-              throwToInterruptStaticGeneration(
-                expression,
-                workStore,
-                prerenderStore
-              )
-            }
+            throwToInterruptStaticGeneration(
+              expression,
+              workStore,
+              prerenderStore
+            )
           },
           set(newValue) {
             Object.defineProperty(promise, prop, {

@@ -258,7 +258,6 @@ export function createPatchedFetcher(
             workUnitStore.type === 'prerender' ||
             // TODO: stop accumulating tags in client prerender
             workUnitStore.type === 'prerender-client' ||
-            workUnitStore.type === 'prerender-ppr' ||
             workUnitStore.type === 'prerender-legacy')
             ? workUnitStore
             : undefined
@@ -418,7 +417,7 @@ export function createPatchedFetcher(
             // may as well avoid the call here
             workUnitStore.type === 'prerender-client')
         ) {
-          // If we have no cache config, and we're in Dynamic I/O prerendering, it'll be a dynamic call.
+          // If we have no cache config, and we're in Cache Components prerendering, it'll be a dynamic call.
           // We don't have to issue that dynamic call.
           if (cacheSignal) {
             cacheSignal.endRead()

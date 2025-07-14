@@ -58,7 +58,6 @@ import { StaticGenBailoutError } from '../../../client/components/static-generat
 import { isStaticGenEnabled } from './helpers/is-static-gen-enabled'
 import {
   abortAndThrowOnSynchronousRequestDataAccess,
-  postponeWithTracking,
   createDynamicTrackingState,
   getFirstDynamicReason,
 } from '../../app-render/dynamic-rendering'
@@ -1184,13 +1183,6 @@ function trackDynamic(
         expression,
         error,
         workUnitStore
-      )
-    } else if (workUnitStore.type === 'prerender-ppr') {
-      // PPR Prerender
-      postponeWithTracking(
-        store.route,
-        expression,
-        workUnitStore.dynamicTracking
       )
     } else if (workUnitStore.type === 'prerender-legacy') {
       // legacy Prerender

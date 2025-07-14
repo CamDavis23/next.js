@@ -9,7 +9,6 @@ import {
   type PrerenderStoreModern,
 } from '../app-render/work-unit-async-storage.external'
 import {
-  postponeWithTracking,
   throwToInterruptStaticGeneration,
   trackDynamicDataInDynamicRender,
   trackSynchronousRequestDataAccessInDev,
@@ -102,17 +101,6 @@ export function headers(): Promise<ReadonlyHeaders> {
           throw new InvariantError(
             `${exportName} must not be used within a client component. Next.js should be preventing ${exportName} from being included in client components statically, but did not in this case.`
           )
-        case 'prerender-ppr':
-          // PPR Prerender (no cacheComponents)
-          // We are prerendering with PPR. We need track dynamic access here eagerly
-          // to keep continuity with how headers has worked in PPR without cacheComponents.
-          // TODO consider switching the semantic to throw on property access instead
-          postponeWithTracking(
-            workStore.route,
-            'headers',
-            workUnitStore.dynamicTracking
-          )
-          break
         case 'prerender-legacy':
           // Legacy Prerender
           // We are in a legacy static generation mode while prerendering

@@ -1,7 +1,6 @@
 import { workAsyncStorage } from '../app-render/work-async-storage.external'
 import { workUnitAsyncStorage } from '../app-render/work-unit-async-storage.external'
 import {
-  postponeWithTracking,
   throwToInterruptStaticGeneration,
   trackDynamicDataInDynamicRender,
 } from '../app-render/dynamic-rendering'
@@ -60,14 +59,6 @@ export function connection(): Promise<void> {
         // cacheComponents Prerender
         // We return a promise that never resolves to allow the prender to stall at this point
         return makeHangingPromise(workUnitStore.renderSignal, '`connection()`')
-      } else if (workUnitStore.type === 'prerender-ppr') {
-        // PPR Prerender (no cacheComponents)
-        // We use React's postpone API to interrupt rendering here to create a dynamic hole
-        postponeWithTracking(
-          workStore.route,
-          'connection',
-          workUnitStore.dynamicTracking
-        )
       } else if (workUnitStore.type === 'prerender-legacy') {
         // Legacy Prerender
         // We throw an error here to interrupt prerendering to mark the route as dynamic
